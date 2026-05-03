@@ -17,8 +17,21 @@ pipeline {
         KUBECONFIG      = '/var/lib/jenkins/.kube/config'
         BLUE_IMAGE      = "${DOCKER_HUB_USER}/blue-app"
         GREEN_IMAGE     = "${DOCKER_HUB_USER}/green-app"
+        MASTER_PRIVATE_IP = '172.31.45.159'
     }
     stages {
+        stage('Fix Kubeconfig') {
+            steps {
+                sh """
+                    sudo sed -i "s|https://.*:6443|https://${MASTER_PRIVATE_IP}:6443|" ${KUBECONFIG}
+                    sudo sed -i '/certificate-authority-data/d' ${KUBECONFIG}
+                    grep -q 'insecure-skip-tls-verify' ${KUBECONFIG} || \
+                        sudo sed -i '/server:/a\\    insecure-skip-tls-verify: true' ${KUBECONFIG}
+                    echo 'Kubeconfig updated!'
+                    kubectl get nodes --kubeconfig=${KUBECONFIG}
+                """
+            }
+        }
         stage('Checkout') {
             steps {
                 git branch: 'main',
@@ -140,6 +153,7 @@ pipeline {
     post {
         failure {
             sh """
+                sudo sed -i "s|https://.*:6443|https://${MASTER_PRIVATE_IP}:6443|" ${KUBECONFIG} || true
                 kubectl patch service demo-app-service \
                     -p '{"spec":{"selector":{"app":"demo-app","slot":"blue"}}}' \
                     --kubeconfig=${KUBECONFIG} || true
