@@ -4,7 +4,7 @@ echo "  EXPERIMENT 2 PROOF — Aakash E | RA2311026010022"
 echo "  Blue-Green Deployment"
 echo "================================================"
 
-WORKER_IP="54.165.36.61"
+WORKER_IP="54.82.222.194"
 KUBECONFIG="/var/lib/jenkins/.kube/config"
 
 echo ""
